@@ -1,12 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy import stats
 
 # Read the JSON file
 df = pd.read_json('amazon_uk_shoes_dataset.json')
 
 # Clean empty cells
-new_df = df.dropna(subset=['price'])
+new_df = df.dropna(subset=['price', 'brand']).copy()
 
 # Print the DataFrame columns to confirm column names
 print("Columns in DataFrame:", new_df.columns)
@@ -41,13 +40,30 @@ if 'price' in new_df.columns:
 else:
     print("The 'price' column is not found in the DataFrame.")
 
-# Filter rows where max_price > 2000
-luxury_items = new_df[new_df['max_price'] > 2000]
+# Sort and select top 10 rows for max_price
+top_10_luxury_items = new_df.nlargest(10, 'max_price')
 
-# Print details of luxury items
-for index, row in luxury_items.iterrows():
-    print("Luxury Item details:")
-    print(row)
+# Sort and select top 10 rows for min_price
+top_10_affordable_items = new_df.nsmallest(10, 'min_price')
+
+# Save the top 10 reports to CSV files
+top_10_luxury_items.to_csv('top_10_luxury_items_report.csv', index=False)
+top_10_affordable_items.to_csv('top_10_affordable_items_report.csv', index=False)
+
+print("Reports generated: 'top_10_luxury_items_report.csv' and 'top_10_affordable_items_report.csv'")
+
+# Calculate the median price for each brand
+# Here, we consider both min_price and max_price for the median calculation
+new_df['price'] = new_df[['min_price', 'max_price']].mean(axis=1)
+median_prices_by_brand = new_df.groupby('brand')['price'].median().reset_index()
+
+# Save the median prices report to a CSV file
+median_prices_by_brand.to_csv('median_prices_by_brand_report.csv', index=False)
+
+print("Report generated: 'median_prices_by_brand_report.csv'")
+
+# Optional: Print the report
+print(median_prices_by_brand)
 
 # Scatter plot of min_price vs. max_price
 x = new_df['min_price']
